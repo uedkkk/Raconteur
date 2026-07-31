@@ -150,7 +150,7 @@ const savedTimeText = computed(() => {
     </div>
 
     <div class="flex-1 overflow-hidden">
-      <MarkdownEditor v-model="content" />
+      <BlogMarkdownEditor v-model="content" />
     </div>
   </div>
 </template>

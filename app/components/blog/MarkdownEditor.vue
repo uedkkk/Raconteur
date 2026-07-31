@@ -150,22 +150,24 @@ function syncScroll() {
   const ratio = ta.scrollTop / (ta.scrollHeight - ta.clientHeight)
   pv.scrollTop = ratio * (pv.scrollHeight - pv.clientHeight)
 }
+
+const toolbarButtons = [
+  { label: 'B', action: () => insertText('**', '**', 'bold'), title: 'Bold (Ctrl+B)' },
+  { label: 'I', action: () => insertText('*', '*', 'italic'), title: 'Italic (Ctrl+I)' },
+  { label: 'H', action: () => insertLine('## '), title: 'Heading' },
+  { label: '\u201C', action: () => insertLine('> '), title: 'Quote' },
+  { label: '<>', action: () => insertText('`', '`', 'code'), title: 'Code (Ctrl+`)' },
+  { label: '\u2022', action: () => insertLine('- '), title: 'List' },
+  { label: '1.', action: () => insertLine('1. '), title: 'Numbered list' },
+  { label: '\uD83D\uDD17', action: () => insertText('[', '](url)', 'link text'), title: 'Link (Ctrl+K)' },
+]
 </script>
 
 <template>
   <div class="flex flex-col h-full">
     <div class="flex items-center gap-1 px-3 py-2 border-b border-neutral-200 bg-neutral-50">
       <button
-        v-for="btn in [
-          { label: 'B', action: () => insertText('**', '**', 'bold'), title: 'Bold (Ctrl+B)' },
-          { label: 'I', action: () => insertText('*', '*', 'italic'), title: 'Italic (Ctrl+I)' },
-          { label: 'H', action: () => insertLine('## '), title: 'Heading' },
-          { label: '"', action: () => insertLine('> '), title: 'Quote' },
-          { label: '<>', action: () => insertText('`', '`', 'code'), title: 'Code (Ctrl+`)' },
-          { label: '•', action: () => insertLine('- '), title: 'List' },
-          { label: '1.', action: () => insertLine('1. '), title: 'Numbered list' },
-          { label: '🔗', action: () => insertText('[', '](url)', 'link text'), title: 'Link (Ctrl+K)' },
-        ]"
+        v-for="btn in toolbarButtons"
         :key="btn.label"
         @click="btn.action"
         :title="btn.title"

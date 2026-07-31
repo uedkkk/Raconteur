@@ -1,20 +1,22 @@
-import { z } from 'zod'
 import { useDB, tables, eq } from '~~/server/utils/db'
 
 export default eventHandler(async (event) => {
-  const query = await getValidatedQuery(
-    event,
-    z.object({
-      slug: z.string().min(1),
-    }).parse,
-  )
+  const path = event.path || ''
+  const slug = decodeURIComponent(path.split('/').pop() || '')
+
+  if (!slug) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Slug is required',
+    })
+  }
 
   const db = useDB()
 
   const post = db
     .select()
     .from(tables.posts)
-    .where(eq(tables.posts.slug, query.slug))
+    .where(eq(tables.posts.slug, slug))
     .get()
 
   if (!post) {

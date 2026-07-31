@@ -29,6 +29,11 @@ const fullUrl = computed(() => {
 
 const dayjs = useDayjs()
 
+const formatDate = (date: string | null) => {
+  if (!date) return ''
+  return dayjs(date).format('MMMM D, YYYY')
+}
+
 const formatBytes = (bytes: number) => {
   if (!bytes) return ''
   const units = ['B', 'KB', 'MB', 'GB']
@@ -134,95 +139,94 @@ const shootingMode = computed<ExifItem[]>(() => {
 const hasExif = computed(() => {
   return basicInfo.value.length > 0 || captureParams.value.length > 0 || deviceInfo.value.length > 0 || shootingMode.value.length > 0
 })
+
+useHead({
+  title: photo.value?.title || 'Photograph',
+})
 </script>
 
 <template>
-  <div class="min-h-screen bg-neutral-950 flex flex-col">
-    <!-- Top bar -->
-    <div class="flex items-center justify-between px-4 py-3 bg-neutral-900/80 backdrop-blur-sm border-b border-neutral-800 shrink-0">
-      <NuxtLink to="/photos" class="flex items-center gap-2 text-neutral-400 hover:text-white transition-colors no-underline">
-        <UIcon name="i-lucide-arrow-left" class="text-lg" />
-        <span class="font-sans text-sm">Back</span>
-      </NuxtLink>
-      <p v-if="photo?.title" class="font-display text-sm font-medium text-white truncate max-w-[50%]">{{ photo.title }}</p>
+  <div class="mx-auto max-w-[900px] px-8 py-12">
+    <!-- Back link -->
+    <NuxtLink to="/photos" class="font-sans text-xs font-semibold uppercase tracking-[0.08em] text-brand-500 no-underline">
+      ← Photographs
+    </NuxtLink>
+
+    <!-- Photo -->
+    <div class="mt-6 mb-8 bg-neutral-100 flex items-center justify-center min-h-[300px]">
+      <img
+        v-if="fullUrl"
+        :src="fullUrl"
+        :alt="photo?.title || ''"
+        class="max-w-full max-h-[70vh] object-contain"
+      />
     </div>
 
-    <!-- Main content -->
-    <div class="flex-1 flex overflow-hidden">
-      <!-- Image -->
-      <div class="flex-1 flex items-center justify-center p-4 overflow-auto">
-        <img
-          v-if="fullUrl"
-          :src="fullUrl"
-          :alt="photo?.title || ''"
-          class="max-w-full max-h-full object-contain rounded"
-        />
+    <!-- Title & meta -->
+    <div class="border-b-4 border-neutral-900 pb-4 mb-8">
+      <h1 class="font-display font-black text-[32px] leading-[1.05] tracking-[-0.025em] text-neutral-900 font-opsz-144">
+        {{ photo?.title || 'Untitled' }}
+      </h1>
+      <div class="font-sans text-xs font-medium text-neutral-500 mt-2 flex gap-2 items-center">
+        <span v-if="photo?.dateTaken">{{ formatDate(photo.dateTaken) }}</span>
+        <span v-if="photo?.city" class="text-neutral-300">·</span>
+        <span v-if="photo?.city">{{ photo.city }}</span>
+        <span v-if="photo?.country" class="text-neutral-300">·</span>
+        <span v-if="photo?.country">{{ photo.country }}</span>
+      </div>
+      <p v-if="photo?.description" class="font-serif text-base leading-[1.6] text-neutral-500 mt-3">
+        {{ photo.description }}
+      </p>
+      <div v-if="photo?.tags && photo.tags.length > 0" class="flex flex-wrap gap-1.5 mt-3">
+        <span v-for="tag in photo.tags" :key="tag" class="font-sans text-xs font-medium text-neutral-600 border border-neutral-300 px-2 py-0.5">{{ tag }}</span>
+      </div>
+    </div>
+
+    <!-- EXIF info -->
+    <div v-if="!hasExif" class="py-8 text-center">
+      <p class="font-serif text-base text-neutral-400">No EXIF data available</p>
+    </div>
+
+    <div v-else class="grid grid-cols-2 gap-x-12 gap-y-8 mb-14">
+      <div v-if="basicInfo.length">
+        <h3 class="font-sans text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-500 mb-3 pb-2 border-b border-neutral-200">Basic Information</h3>
+        <dl class="space-y-2">
+          <div v-for="item in basicInfo" :key="item.label" class="flex justify-between gap-3">
+            <dt class="font-sans text-sm text-neutral-500 shrink-0">{{ item.label }}</dt>
+            <dd class="font-sans text-sm text-neutral-900 text-right break-all">{{ item.value }}</dd>
+          </div>
+        </dl>
       </div>
 
-      <!-- Info panel -->
-      <aside class="w-80 bg-neutral-900 border-l border-neutral-800 overflow-y-auto shrink-0">
-        <div class="p-5 space-y-6">
-          <!-- Title & description -->
-          <div>
-            <h1 class="font-display text-lg font-bold text-white mb-1">{{ photo?.title || 'Untitled' }}</h1>
-            <p v-if="photo?.description" class="font-sans text-sm text-neutral-400 leading-relaxed">{{ photo.description }}</p>
+      <div v-if="captureParams.length">
+        <h3 class="font-sans text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-500 mb-3 pb-2 border-b border-neutral-200">Capture Parameters</h3>
+        <dl class="space-y-2">
+          <div v-for="item in captureParams" :key="item.label" class="flex justify-between gap-3">
+            <dt class="font-sans text-sm text-neutral-500 shrink-0">{{ item.label }}</dt>
+            <dd class="font-sans text-sm text-neutral-900 text-right break-all">{{ item.value }}</dd>
           </div>
+        </dl>
+      </div>
 
-          <!-- Tags -->
-          <div v-if="photo?.tags && photo.tags.length > 0" class="flex flex-wrap gap-1.5">
-            <span v-for="tag in photo.tags" :key="tag" class="px-2 py-0.5 bg-neutral-800 text-neutral-300 font-sans text-xs rounded">{{ tag }}</span>
+      <div v-if="deviceInfo.length">
+        <h3 class="font-sans text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-500 mb-3 pb-2 border-b border-neutral-200">Device</h3>
+        <dl class="space-y-2">
+          <div v-for="item in deviceInfo" :key="item.label" class="flex justify-between gap-3">
+            <dt class="font-sans text-sm text-neutral-500 shrink-0">{{ item.label }}</dt>
+            <dd class="font-sans text-sm text-neutral-900 text-right break-all">{{ item.value }}</dd>
           </div>
+        </dl>
+      </div>
 
-          <!-- No EXIF -->
-          <div v-if="!hasExif" class="py-8 text-center">
-            <UIcon name="i-lucide-info" class="text-2xl text-neutral-600 mb-2" />
-            <p class="font-sans text-sm text-neutral-500">No EXIF data available</p>
+      <div v-if="shootingMode.length">
+        <h3 class="font-sans text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-500 mb-3 pb-2 border-b border-neutral-200">Shooting Mode</h3>
+        <dl class="space-y-2">
+          <div v-for="item in shootingMode" :key="item.label" class="flex justify-between gap-3">
+            <dt class="font-sans text-sm text-neutral-500 shrink-0">{{ item.label }}</dt>
+            <dd class="font-sans text-sm text-neutral-900 text-right break-all">{{ item.value }}</dd>
           </div>
-
-          <!-- EXIF sections -->
-          <template v-if="hasExif">
-            <div v-if="basicInfo.length">
-              <h3 class="font-sans text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">Basic Information</h3>
-              <dl class="space-y-1.5">
-                <div v-for="item in basicInfo" :key="item.label" class="flex justify-between gap-3">
-                  <dt class="font-sans text-sm text-neutral-500 shrink-0">{{ item.label }}</dt>
-                  <dd class="font-sans text-sm text-neutral-200 text-right break-all">{{ item.value }}</dd>
-                </div>
-              </dl>
-            </div>
-
-            <div v-if="captureParams.length">
-              <h3 class="font-sans text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">Capture Parameters</h3>
-              <dl class="space-y-1.5">
-                <div v-for="item in captureParams" :key="item.label" class="flex justify-between gap-3">
-                  <dt class="font-sans text-sm text-neutral-500 shrink-0">{{ item.label }}</dt>
-                  <dd class="font-sans text-sm text-neutral-200 text-right break-all">{{ item.value }}</dd>
-                </div>
-              </dl>
-            </div>
-
-            <div v-if="deviceInfo.length">
-              <h3 class="font-sans text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">Device</h3>
-              <dl class="space-y-1.5">
-                <div v-for="item in deviceInfo" :key="item.label" class="flex justify-between gap-3">
-                  <dt class="font-sans text-sm text-neutral-500 shrink-0">{{ item.label }}</dt>
-                  <dd class="font-sans text-sm text-neutral-200 text-right break-all">{{ item.value }}</dd>
-                </div>
-              </dl>
-            </div>
-
-            <div v-if="shootingMode.length">
-              <h3 class="font-sans text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">Shooting Mode</h3>
-              <dl class="space-y-1.5">
-                <div v-for="item in shootingMode" :key="item.label" class="flex justify-between gap-3">
-                  <dt class="font-sans text-sm text-neutral-500 shrink-0">{{ item.label }}</dt>
-                  <dd class="font-sans text-sm text-neutral-200 text-right break-all">{{ item.value }}</dd>
-                </div>
-              </dl>
-            </div>
-          </template>
-        </div>
-      </aside>
+        </dl>
+      </div>
     </div>
   </div>
 </template>

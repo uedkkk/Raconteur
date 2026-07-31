@@ -24,21 +24,26 @@ useHead({
   title: post.value.title,
 })
 
+const dayjs = useDayjs()
 function formatDate(date: string | Date) {
-  return useDayjs()(date).format('MMMM D, YYYY')
+  return dayjs(date).format('MMMM D, YYYY')
 }
 </script>
 
 <template>
-  <div v-if="post" class="mx-auto max-w-[740px] px-6 py-12">
+  <div v-if="post" class="mx-auto max-w-[900px] px-8 py-12">
     <header class="mb-10">
-      <h1 class="font-display text-4xl font-black text-neutral-900 mb-4 leading-tight">
+      <NuxtLink to="/" class="font-sans text-xs font-semibold uppercase tracking-[0.08em] text-brand-500 no-underline">
+        ← Writing
+      </NuxtLink>
+      <p class="font-display font-bold text-sm uppercase tracking-[0.05em] text-brand-500 mt-6 mb-3">
+        {{ formatDate(post.publishedAt || post.createdAt) }}
+      </p>
+      <h1 class="font-display font-black text-[42px] leading-[1.05] tracking-[-0.025em] text-neutral-900 mb-3 font-opsz-144">
         {{ post.title }}
       </h1>
-      <div class="flex items-center gap-2 font-sans text-sm text-neutral-500">
+      <div class="font-sans text-sm text-neutral-500">
         <span v-if="appAuthor">{{ appAuthor }}</span>
-        <span v-if="appAuthor" class="text-neutral-300">·</span>
-        <span>{{ formatDate(post.publishedAt || post.createdAt) }}</span>
       </div>
     </header>
 
@@ -59,7 +64,7 @@ function formatDate(date: string | Date) {
 }
 
 .raconteur-content :deep(h2) {
-  font-family: var(--font-ui);
+  font-family: var(--font-sans);
   font-size: 28px;
   font-weight: 700;
   line-height: 34.5px;
@@ -69,7 +74,7 @@ function formatDate(date: string | Date) {
 }
 
 .raconteur-content :deep(h3) {
-  font-family: var(--font-ui);
+  font-family: var(--font-sans);
   font-size: 22px;
   font-weight: 700;
   margin-top: 40px;
@@ -107,13 +112,13 @@ function formatDate(date: string | Date) {
 }
 
 .raconteur-content :deep(a) {
-  color: var(--color-brand-600);
+  color: var(--color-brand-500);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .raconteur-content :deep(a:hover) {
-  color: var(--color-brand-700);
+  color: var(--color-brand-600);
 }
 
 .raconteur-content :deep(code) {
