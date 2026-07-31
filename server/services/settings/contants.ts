@@ -1,0 +1,174 @@
+import type { SettingConfig } from '~~/shared/types/settings'
+
+export const STORAGE_PROVIDERS = ['local', 's3'] as const
+export type StorageProvider = (typeof STORAGE_PROVIDERS)[number]
+
+export const DEFAULT_SETTINGS = [
+  {
+    namespace: 'system',
+    key: 'firstLaunch',
+    type: 'boolean',
+    value: true,
+    defaultValue: true,
+    label: 'settings.system.firstLaunch.label',
+    description: 'settings.system.firstLaunch.description',
+    isReadonly: true,
+  },
+  {
+    namespace: 'app',
+    key: 'title',
+    type: 'string',
+    defaultValue: 'Raconteur',
+    label: 'settings.app.title.label',
+    description: 'settings.app.title.description',
+    isPublic: true,
+  },
+  {
+    namespace: 'app',
+    key: 'slogan',
+    type: 'string',
+    defaultValue: '',
+    label: 'settings.app.slogan.label',
+    description: 'settings.app.slogan.description',
+    isPublic: true,
+  },
+  {
+    namespace: 'app',
+    key: 'author',
+    type: 'string',
+    defaultValue: '',
+    label: 'settings.app.author.label',
+    description: 'settings.app.author.description',
+    isPublic: true,
+  },
+  {
+    namespace: 'app',
+    key: 'avatarUrl',
+    type: 'string',
+    defaultValue: '',
+    label: 'settings.app.avatarUrl.label',
+    description: 'settings.app.avatarUrl.description',
+    isPublic: true,
+  },
+  {
+    namespace: 'system',
+    key: 'upload.maxFileSize',
+    type: 'number',
+    defaultValue: 256,
+    label: 'settings.system.upload.maxFileSize.label',
+    description: 'settings.system.upload.maxFileSize.description',
+    isPublic: true,
+  },
+  {
+    namespace: 'system',
+    key: 'upload.duplicateCheck.enabled',
+    type: 'boolean',
+    defaultValue: true,
+    label: 'settings.system.upload.duplicateCheck.enabled.label',
+    description: 'settings.system.upload.duplicateCheck.enabled.description',
+    isPublic: true,
+  },
+  {
+    namespace: 'system',
+    key: 'upload.duplicateCheck.mode',
+    type: 'string',
+    defaultValue: 'skip',
+    enum: ['warn', 'block', 'skip'],
+    label: 'settings.system.upload.duplicateCheck.mode.label',
+    description: 'settings.system.upload.duplicateCheck.mode.description',
+    isPublic: true,
+  },
+  {
+    namespace: 'system',
+    key: 'webglImageViewerDebug',
+    type: 'boolean',
+    defaultValue: false,
+    label: 'settings.system.webglImageViewerDebug.label',
+    description: 'settings.system.webglImageViewerDebug.description',
+    isPublic: true,
+  },
+  {
+    namespace: 'system',
+    key: 'auth.github.enabled',
+    type: 'boolean',
+    defaultValue: false,
+    label: 'settings.system.auth.github.enabled.label',
+    description: 'settings.system.auth.github.enabled.description',
+    isPublic: true,
+  },
+  {
+    namespace: 'system',
+    key: 'auth.github.clientId',
+    type: 'string',
+    defaultValue: '',
+    label: 'settings.system.auth.github.clientId.label',
+    description: 'settings.system.auth.github.clientId.description',
+  },
+  {
+    namespace: 'system',
+    key: 'auth.github.clientSecret',
+    type: 'string',
+    defaultValue: '',
+    label: 'settings.system.auth.github.clientSecret.label',
+    description: 'settings.system.auth.github.clientSecret.description',
+    isSecret: true,
+  },
+  {
+    namespace: 'privacy',
+    key: 'upload.autoEraseLocation',
+    type: 'boolean',
+    defaultValue: false,
+    label: 'settings.privacy.upload.autoEraseLocation.label',
+    description: 'settings.privacy.upload.autoEraseLocation.description',
+    isPublic: true,
+  },
+  {
+    namespace: 'location',
+    key: 'language',
+    type: 'string',
+    defaultValue: 'en',
+    enum: ['en', 'zh-CN', 'zh-TW', 'ja'] as const,
+    label: 'settings.location.language.label',
+    description: 'settings.location.language.description',
+    isPublic: true,
+  },
+  {
+    namespace: 'location',
+    key: 'mapbox.token',
+    type: 'string',
+    defaultValue: '',
+    label: 'settings.location.mapbox.token.label',
+    description: 'settings.location.mapbox.token.description',
+    isPublic: true,
+  },
+  {
+    namespace: 'location',
+    key: 'nominatim.baseUrl',
+    type: 'string',
+    defaultValue: '',
+    label: 'settings.location.nominatim.baseUrl.label',
+    description: 'settings.location.nominatim.baseUrl.description',
+    isPublic: true,
+  },
+  {
+    namespace: 'storage',
+    key: 'provider',
+    type: 'number',
+    defaultValue: null,
+    label: 'settings.storage.provider.label',
+    description: 'settings.storage.provider.description',
+  },
+] as const satisfies SettingConfig[]
+
+export const settingNamespaces = [
+  ...new Set(DEFAULT_SETTINGS.map((s) => s.namespace)),
+] as const
+export const settingKeys = [
+  ...new Set(DEFAULT_SETTINGS.map((s) => s.key)),
+] as const
+
+export type SettingNamespace = (typeof settingNamespaces)[number]
+export type SettingKey<N extends SettingNamespace> = Extract<
+  (typeof DEFAULT_SETTINGS)[number],
+  { namespace: N }
+>['key']
