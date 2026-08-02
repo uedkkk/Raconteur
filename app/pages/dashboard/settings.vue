@@ -8,6 +8,7 @@ const toast = useToast()
 const namespaces = [
   { label: 'Site', value: 'app' },
   { label: 'System', value: 'system' },
+  { label: 'Storage', value: 'storage' },
   { label: 'Privacy', value: 'privacy' },
   { label: 'Location', value: 'location' },
 ]
@@ -17,6 +18,29 @@ const fields = ref<FieldDescriptor[]>([])
 const loading = ref(false)
 const saving = ref(false)
 const formValues = ref<Record<string, any>>({})
+
+// Storage state
+interface StorageProvider {
+  id: number
+  name: string
+  provider: string
+  isActive: boolean
+  createdAt: string
+}
+const storageProviders = ref<StorageProvider[]>([])
+const storageLoading = ref(false)
+const showAddProvider = ref(false)
+const newProvider = ref({
+  name: '',
+  provider: 's3' as 's3' | 'local',
+  endpoint: '',
+  bucket: '',
+  region: 'auto',
+  accessKeyId: '',
+  secretAccessKey: '',
+  forcePathStyle: false,
+})
+const addingProvider = ref(false)
 
 async function fetchFields() {
   loading.value = true
@@ -65,7 +89,81 @@ function isFieldVisible(field: FieldDescriptor) {
   return formValues.value[field.ui.visibleIf.fieldKey] === field.ui.visibleIf.value
 }
 
-watch(activeNamespace, fetchFields, { immediate: true })
+// Storage functions
+async function fetchStorageProviders() {
+  storageLoading.value = true
+  try {
+    const res = await $fetch<{ providers: StorageProvider[]; activeId: number }>(
+      '/api/system/settings/storage-providers',
+    )
+    storageProviders.value = res.providers
+  } catch (e) {
+    console.error('Failed to load storage providers:', e)
+  } finally {
+    storageLoading.value = false
+  }
+}
+
+async function activateProvider(id: number) {
+  try {
+    await $fetch(`/api/system/settings/storage-providers/${id}/activate`, { method: 'POST' })
+    await fetchStorageProviders()
+    toast.add({ title: 'Storage provider switched', color: 'success' })
+  } catch (e: any) {
+    toast.add({ title: 'Failed to switch provider', description: e.message, color: 'error' })
+  }
+}
+
+async function deleteProvider(id: number) {
+  if (!confirm('Delete this storage provider?')) return
+  try {
+    await $fetch(`/api/system/settings/storage-providers/${id}`, { method: 'DELETE' })
+    await fetchStorageProviders()
+    toast.add({ title: 'Provider deleted', color: 'success' })
+  } catch (e: any) {
+    toast.add({ title: 'Failed to delete', description: e.message, color: 'error' })
+  }
+}
+
+async function addProvider() {
+  addingProvider.value = true
+  try {
+    await $fetch('/api/system/settings/storage-providers', {
+      method: 'POST',
+      body: {
+        name: newProvider.value.name,
+        config: {
+          provider: 's3',
+          endpoint: newProvider.value.endpoint,
+          bucket: newProvider.value.bucket,
+          region: newProvider.value.region,
+          accessKeyId: newProvider.value.accessKeyId,
+          secretAccessKey: newProvider.value.secretAccessKey,
+          forcePathStyle: newProvider.value.forcePathStyle,
+        },
+      },
+    })
+    showAddProvider.value = false
+    newProvider.value = {
+      name: '', provider: 's3', endpoint: '', bucket: '', region: 'auto',
+      accessKeyId: '', secretAccessKey: '', forcePathStyle: false,
+    }
+    await fetchStorageProviders()
+    toast.add({ title: 'Storage provider added', color: 'success' })
+  } catch (e: any) {
+    toast.add({ title: 'Failed to add provider', description: e.message, color: 'error' })
+  } finally {
+    addingProvider.value = false
+  }
+}
+
+watch(activeNamespace, (val) => {
+  if (val === 'storage') {
+    fetchStorageProviders()
+  } else {
+    fetchFields()
+  }
+}, { immediate: true })
 </script>
 
 <template>
@@ -86,7 +184,136 @@ watch(activeNamespace, fetchFields, { immediate: true })
       </button>
     </div>
 
-    <div v-if="loading" class="py-20 text-center">
+    <!-- Storage tab -->
+    <div v-if="activeNamespace === 'storage'">
+      <div v-if="storageLoading" class="py-20 text-center">
+        <UIcon name="i-lucide-loader-2" class="text-2xl text-neutral-400 animate-spin" />
+      </div>
+
+      <div v-else>
+        <!-- Provider list -->
+        <div class="space-y-3 mb-6">
+          <div
+            v-for="p in storageProviders"
+            :key="p.id"
+            class="flex items-center justify-between p-4 border border-neutral-200 rounded"
+          >
+            <div class="flex items-center gap-3">
+              <UIcon
+                :name="p.provider === 's3' ? 'i-simple-icons-amazons3' : 'i-lucide-hard-drive'"
+                class="text-xl text-neutral-400"
+              />
+              <div>
+                <p class="font-sans text-sm font-medium text-neutral-900">{{ p.name }}</p>
+                <p class="font-sans text-xs text-neutral-400 uppercase">{{ p.provider }}</p>
+              </div>
+              <span v-if="p.isActive" class="font-sans text-xs px-2 py-0.5 rounded bg-green-100 text-green-700">
+                Active
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                v-if="!p.isActive"
+                @click="activateProvider(p.id)"
+                class="px-3 py-1.5 font-sans text-xs font-medium text-brand-600 hover:bg-brand-50 rounded transition-colors"
+              >
+                Activate
+              </button>
+              <button
+                v-if="!p.isActive"
+                @click="deleteProvider(p.id)"
+                class="p-1.5 text-neutral-400 hover:text-red-500 transition-colors"
+              >
+                <UIcon name="i-lucide-trash-2" class="text-base" />
+              </button>
+            </div>
+          </div>
+
+          <div v-if="storageProviders.length === 0" class="text-center py-12">
+            <p class="font-sans text-sm text-neutral-400">No storage providers configured.</p>
+          </div>
+        </div>
+
+        <!-- Add provider -->
+        <button
+          v-if="!showAddProvider"
+          @click="showAddProvider = true"
+          class="flex items-center gap-1.5 px-4 py-2 font-sans text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 rounded transition-colors"
+        >
+          <UIcon name="i-lucide-plus" class="text-base" />
+          Add S3 Provider
+        </button>
+
+        <div v-else class="p-5 border border-neutral-200 rounded space-y-4">
+          <h3 class="font-sans text-sm font-medium text-neutral-900">New S3 Storage Provider</h3>
+
+          <div>
+            <label class="block font-sans text-sm font-medium text-neutral-700 mb-1">Name</label>
+            <input v-model="newProvider.name" type="text" placeholder="My S3"
+              class="w-full px-3 py-2 font-sans text-sm border border-neutral-300 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none" />
+          </div>
+          <div>
+            <label class="block font-sans text-sm font-medium text-neutral-700 mb-1">Endpoint</label>
+            <input v-model="newProvider.endpoint" type="text" placeholder="https://s3.amazonaws.com"
+              class="w-full px-3 py-2 font-sans text-sm border border-neutral-300 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none" />
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block font-sans text-sm font-medium text-neutral-700 mb-1">Bucket</label>
+              <input v-model="newProvider.bucket" type="text" placeholder="my-bucket"
+                class="w-full px-3 py-2 font-sans text-sm border border-neutral-300 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none" />
+            </div>
+            <div>
+              <label class="block font-sans text-sm font-medium text-neutral-700 mb-1">Region</label>
+              <input v-model="newProvider.region" type="text" placeholder="auto"
+                class="w-full px-3 py-2 font-sans text-sm border border-neutral-300 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block font-sans text-sm font-medium text-neutral-700 mb-1">Access Key ID</label>
+              <input v-model="newProvider.accessKeyId" type="text"
+                class="w-full px-3 py-2 font-sans text-sm border border-neutral-300 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none" />
+            </div>
+            <div>
+              <label class="block font-sans text-sm font-medium text-neutral-700 mb-1">Secret Access Key</label>
+              <input v-model="newProvider.secretAccessKey" type="password"
+                class="w-full px-3 py-2 font-sans text-sm border border-neutral-300 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none" />
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              @click="newProvider.forcePathStyle = !newProvider.forcePathStyle"
+              class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
+              :class="newProvider.forcePathStyle ? 'bg-brand-500' : 'bg-neutral-300'"
+            >
+              <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform"
+                :class="newProvider.forcePathStyle ? 'translate-x-5' : 'translate-x-1'" />
+            </button>
+            <span class="font-sans text-sm text-neutral-600">Force path style</span>
+          </div>
+
+          <div class="flex items-center gap-2 pt-2">
+            <button
+              @click="addProvider"
+              :disabled="addingProvider || !newProvider.name || !newProvider.endpoint || !newProvider.bucket"
+              class="px-4 py-2 font-sans text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 rounded transition-colors disabled:opacity-50"
+            >
+              {{ addingProvider ? 'Adding...' : 'Add Provider' }}
+            </button>
+            <button
+              @click="showAddProvider = false"
+              class="px-4 py-2 font-sans text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Generic settings tabs -->
+    <div v-else-if="loading" class="py-20 text-center">
       <UIcon name="i-lucide-loader-2" class="text-2xl text-neutral-400 animate-spin" />
     </div>
 
