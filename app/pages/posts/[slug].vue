@@ -63,6 +63,16 @@ function formatDate(date: string | Date) {
   color: rgba(0, 0, 0, 0.84);
 }
 
+.raconteur-content :deep(h1) {
+  font-family: var(--font-sans);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin-top: 56px;
+  margin-bottom: -13px;
+}
+
 .raconteur-content :deep(h2) {
   font-family: var(--font-sans);
   font-size: 28px;
@@ -91,8 +101,8 @@ function formatDate(date: string | Date) {
 
 .raconteur-content :deep(p:first-child)::first-letter {
   font-family: var(--font-display);
-  font-size: 60px;
-  line-height: 60px;
+  font-size: 42px;
+  line-height: 42px;
   font-weight: 900;
   float: left;
   margin: 0 7px 0 -5px;
@@ -100,11 +110,10 @@ function formatDate(date: string | Date) {
 
 .raconteur-content :deep(blockquote) {
   font-family: var(--font-display);
-  font-size: 30px;
+  font-size: 18px;
   font-style: italic;
-  font-weight: 700;
-  line-height: 44.4px;
-  letter-spacing: -0.012em;
+  font-weight: 500;
+  line-height: 1.5;
   color: rgba(0, 0, 0, 0.68);
   border-left: none;
   padding-left: 50px;

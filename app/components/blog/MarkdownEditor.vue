@@ -178,22 +178,9 @@ const toolbarButtons = [
     </div>
 
     <div class="flex flex-1 overflow-hidden">
-      <textarea
-        ref="textareaRef"
-        v-model="content"
-        @keydown="handleKeydown"
-        @paste="handlePaste"
-        @drop="handleDrop"
-        @dragover.prevent
-        @scroll="syncScroll"
-        class="w-1/2 p-4 font-mono text-sm leading-relaxed text-neutral-800 bg-white border-r border-neutral-200 resize-none outline-none custom-scrollbar"
-        placeholder="Write your story in Markdown..."
-        spellcheck="false"
-      />
-
       <div
         ref="previewRef"
-        class="w-1/2 p-4 overflow-y-auto bg-white custom-scrollbar"
+        class="w-1/2 p-4 overflow-y-auto bg-white border-r border-neutral-200 custom-scrollbar"
       >
         <div
           v-if="content"
@@ -204,6 +191,19 @@ const toolbarButtons = [
           Preview will appear here...
         </div>
       </div>
+
+      <textarea
+        ref="textareaRef"
+        v-model="content"
+        @keydown="handleKeydown"
+        @paste="handlePaste"
+        @drop="handleDrop"
+        @dragover.prevent
+        @scroll="syncScroll"
+        class="w-1/2 p-4 font-mono text-sm leading-relaxed text-neutral-800 bg-white resize-none outline-none custom-scrollbar"
+        placeholder="Write your story in Markdown..."
+        spellcheck="false"
+      />
     </div>
   </div>
 </template>
@@ -216,8 +216,18 @@ const toolbarButtons = [
   color: rgba(0, 0, 0, 0.84);
 }
 
+.raconteur-content :deep(h1) {
+  font-family: var(--font-sans);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin-top: 28px;
+  margin-bottom: -6px;
+}
+
 .raconteur-content :deep(h2) {
-  font-family: var(--font-ui);
+  font-family: var(--font-sans);
   font-size: 22px;
   font-weight: 700;
   margin-top: 28px;
@@ -225,7 +235,7 @@ const toolbarButtons = [
 }
 
 .raconteur-content :deep(h3) {
-  font-family: var(--font-ui);
+  font-family: var(--font-sans);
   font-size: 18px;
   font-weight: 700;
   margin-top: 20px;
@@ -242,8 +252,10 @@ const toolbarButtons = [
 
 .raconteur-content :deep(blockquote) {
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: 18px;
   font-style: italic;
+  font-weight: 500;
+  line-height: 1.5;
   color: rgba(0, 0, 0, 0.68);
   border-left: none;
   padding-left: 30px;

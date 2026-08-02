@@ -39,12 +39,12 @@ function thumbUrl(photo: Photo) {
         <span class="font-sans text-[11px] font-semibold uppercase tracking-[0.15em] text-brand-500">Latest post</span>
         <span class="flex-1 h-px bg-neutral-200" />
       </div>
-      <h2 class="font-display font-bold text-[42px] leading-[1.05] tracking-[-0.025em] mb-5 font-opsz-144">
+      <h2 class="font-display font-bold text-[36px] leading-[1.05] tracking-[-0.025em] mb-5 font-opsz-144">
         <NuxtLink :to="`/posts/${featuredPost.slug}`" class="no-underline text-neutral-900 hover:text-brand-500 transition-colors">
           {{ featuredPost.title }}
         </NuxtLink>
       </h2>
-      <p v-if="featuredPost.excerpt" class="font-serif text-[19px] leading-[1.6] text-neutral-500 line-clamp-3">
+      <p v-if="featuredPost.excerpt" class="font-serif text-[17px] leading-[1.6] text-neutral-500 line-clamp-3">
         {{ featuredPost.excerpt }}
       </p>
       <p class="font-sans text-xs font-medium text-neutral-500 mt-[18px]">
@@ -65,12 +65,12 @@ function thumbUrl(photo: Photo) {
           {{ formatDateShort(post.publishedAt || post.createdAt) }}
         </div>
         <div>
-          <h3 class="font-display font-semibold text-[26px] leading-[1.15] tracking-[-0.01em] mb-2.5">
+          <h3 class="font-display font-semibold text-[22px] leading-[1.15] tracking-[-0.01em] mb-2.5">
             <NuxtLink :to="`/posts/${post.slug}`" class="no-underline text-neutral-900 hover:text-brand-500 transition-colors">
               {{ post.title }}
             </NuxtLink>
           </h3>
-          <p v-if="post.excerpt" class="font-serif text-base leading-[1.6] text-neutral-500 line-clamp-3">
+          <p v-if="post.excerpt" class="font-serif text-sm leading-[1.6] text-neutral-500 line-clamp-3">
             {{ post.excerpt }}
           </p>
         </div>
