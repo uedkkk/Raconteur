@@ -369,7 +369,7 @@ export class SettingsManager {
 
     async updateProvider(
       id: number,
-      providerConfig: Partial<NewSettingStorageProvider['config']>,
+      providerConfig: { name?: string; config?: StorageConfig },
     ): Promise<void> {
       const db = useDB()
       db.update(tables.settings_storage_providers)

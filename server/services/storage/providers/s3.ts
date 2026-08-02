@@ -2,7 +2,7 @@ import type { _Object, S3ClientConfig } from '@aws-sdk/client-s3'
 import {
   DeleteObjectCommand,
   GetObjectCommand,
-  ListObjectsCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3'
@@ -223,26 +223,28 @@ export class S3StorageProvider implements StorageProvider {
   }
 
   async listAll(): Promise<StorageObject[]> {
-    const cmd = new ListObjectsCommand({
-      Bucket: this.config.bucket,
-      Prefix: this.config.prefix,
-      MaxKeys: this.config.maxKeys,
-    })
+    const results: StorageObject[] = []
+    let continuationToken: string | undefined
 
-    const resp = await this.client.send(cmd)
-    this.logger?.log(resp.Contents?.map(convertToStorageObject))
-    return resp.Contents?.map(convertToStorageObject) || []
+    do {
+      const cmd = new ListObjectsV2Command({
+        Bucket: this.config.bucket,
+        MaxKeys: this.config.maxKeys || 1000,
+        ContinuationToken: continuationToken,
+      })
+
+      const resp = await this.client.send(cmd)
+      if (resp.Contents) {
+        results.push(...resp.Contents.map(convertToStorageObject))
+      }
+      continuationToken = resp.IsTruncated ? resp.NextContinuationToken : undefined
+    } while (continuationToken)
+
+    this.logger?.log(results)
+    return results
   }
 
   async listImages(): Promise<StorageObject[]> {
-    const cmd = new ListObjectsCommand({
-      Bucket: this.config.bucket,
-      Prefix: this.config.prefix,
-      MaxKeys: this.config.maxKeys,
-    })
-
-    const resp = await this.client.send(cmd)
-    // TODO: filter supported image format
-    return resp.Contents?.map(convertToStorageObject) || []
+    return this.listAll()
   }
 }

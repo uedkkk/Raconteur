@@ -1,8 +1,6 @@
 import sharp from 'sharp'
 
 export default eventHandler(async (event) => {
-  const { storageProvider } = useStorageProvider(event)
-
   let url = getRouterParam(event, 'thumbnailUrl')
 
   if (!url) {
@@ -14,10 +12,7 @@ export default eventHandler(async (event) => {
 
   url = decodeURIComponent(url)
 
-  if (
-    storageProvider.config?.provider === 'local' &&
-    url.startsWith('/storage/')
-  ) {
+  if (url.startsWith('/storage/')) {
     const scheme = event.node.req.headers['x-forwarded-proto'] || 'http'
     url = `${scheme}://${event.node.req.headers.host}${url}`
   }

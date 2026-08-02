@@ -16,6 +16,7 @@ export default eventHandler(async (event) => {
       provider: p.provider,
       isActive: p.id === activeId,
       createdAt: p.createdAt,
+      config: p.config,
     })),
     activeId,
   }

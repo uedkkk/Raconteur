@@ -85,11 +85,13 @@ async function savePost() {
 
 async function publishPost() {
   status.value = 'published'
+  isDirty.value = true
   await savePost()
 }
 
 async function unpublishPost() {
   status.value = 'draft'
+  isDirty.value = true
   await savePost()
 }
 

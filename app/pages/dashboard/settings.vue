@@ -26,6 +26,7 @@ interface StorageProvider {
   provider: string
   isActive: boolean
   createdAt: string
+  config?: any
 }
 const storageProviders = ref<StorageProvider[]>([])
 const storageLoading = ref(false)
@@ -41,6 +42,18 @@ const newProvider = ref({
   forcePathStyle: false,
 })
 const addingProvider = ref(false)
+
+const editingProviderId = ref<number | null>(null)
+const editProvider = ref({
+  name: '',
+  endpoint: '',
+  bucket: '',
+  region: 'auto',
+  accessKeyId: '',
+  secretAccessKey: '',
+  forcePathStyle: false,
+})
+const savingProvider = ref(false)
 
 async function fetchFields() {
   loading.value = true
@@ -157,6 +170,53 @@ async function addProvider() {
   }
 }
 
+function startEditProvider(p: StorageProvider) {
+  editingProviderId.value = p.id
+  const cfg = p.config || {}
+  editProvider.value = {
+    name: p.name,
+    endpoint: cfg.endpoint || '',
+    bucket: cfg.bucket || '',
+    region: cfg.region || 'auto',
+    accessKeyId: cfg.accessKeyId || '',
+    secretAccessKey: '',
+    forcePathStyle: cfg.forcePathStyle || false,
+  }
+}
+
+function cancelEditProvider() {
+  editingProviderId.value = null
+}
+
+async function saveEditProvider() {
+  if (editingProviderId.value === null) return
+  savingProvider.value = true
+  try {
+    await $fetch(`/api/system/settings/storage-providers/${editingProviderId.value}`, {
+      method: 'PUT',
+      body: {
+        name: editProvider.value.name,
+        config: {
+          provider: 's3',
+          endpoint: editProvider.value.endpoint,
+          bucket: editProvider.value.bucket,
+          region: editProvider.value.region,
+          accessKeyId: editProvider.value.accessKeyId,
+          secretAccessKey: editProvider.value.secretAccessKey,
+          forcePathStyle: editProvider.value.forcePathStyle,
+        },
+      },
+    })
+    editingProviderId.value = null
+    await fetchStorageProviders()
+    toast.add({ title: 'Storage provider updated', color: 'success' })
+  } catch (e: any) {
+    toast.add({ title: 'Failed to update provider', description: e.message, color: 'error' })
+  } finally {
+    savingProvider.value = false
+  }
+}
+
 watch(activeNamespace, (val) => {
   if (val === 'storage') {
     fetchStorageProviders()
@@ -221,6 +281,13 @@ watch(activeNamespace, (val) => {
               </button>
               <button
                 v-if="!p.isActive"
+                @click="startEditProvider(p)"
+                class="p-1.5 text-neutral-400 hover:text-brand-500 transition-colors"
+              >
+                <UIcon name="i-lucide-pencil" class="text-base" />
+              </button>
+              <button
+                v-if="!p.isActive"
                 @click="deleteProvider(p.id)"
                 class="p-1.5 text-neutral-400 hover:text-red-500 transition-colors"
               >
@@ -231,6 +298,73 @@ watch(activeNamespace, (val) => {
 
           <div v-if="storageProviders.length === 0" class="text-center py-12">
             <p class="font-sans text-sm text-neutral-400">No storage providers configured.</p>
+          </div>
+        </div>
+
+        <!-- Edit provider form -->
+        <div v-if="editingProviderId !== null" class="p-5 border border-neutral-200 rounded space-y-4 mb-6">
+          <h3 class="font-sans text-sm font-medium text-neutral-900">Edit Storage Provider</h3>
+
+          <div>
+            <label class="block font-sans text-sm font-medium text-neutral-700 mb-1">Name</label>
+            <input v-model="editProvider.name" type="text" placeholder="My S3"
+              class="w-full px-3 py-2 font-sans text-sm border border-neutral-300 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none" />
+          </div>
+          <div>
+            <label class="block font-sans text-sm font-medium text-neutral-700 mb-1">Endpoint</label>
+            <input v-model="editProvider.endpoint" type="text" placeholder="https://s3.amazonaws.com"
+              class="w-full px-3 py-2 font-sans text-sm border border-neutral-300 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none" />
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block font-sans text-sm font-medium text-neutral-700 mb-1">Bucket</label>
+              <input v-model="editProvider.bucket" type="text" placeholder="my-bucket"
+                class="w-full px-3 py-2 font-sans text-sm border border-neutral-300 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none" />
+            </div>
+            <div>
+              <label class="block font-sans text-sm font-medium text-neutral-700 mb-1">Region</label>
+              <input v-model="editProvider.region" type="text" placeholder="auto"
+                class="w-full px-3 py-2 font-sans text-sm border border-neutral-300 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block font-sans text-sm font-medium text-neutral-700 mb-1">Access Key ID</label>
+              <input v-model="editProvider.accessKeyId" type="text"
+                class="w-full px-3 py-2 font-sans text-sm border border-neutral-300 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none" />
+            </div>
+            <div>
+              <label class="block font-sans text-sm font-medium text-neutral-700 mb-1">Secret Access Key</label>
+              <input v-model="editProvider.secretAccessKey" type="password" placeholder="Leave empty to keep current"
+                class="w-full px-3 py-2 font-sans text-sm border border-neutral-300 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none" />
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              @click="editProvider.forcePathStyle = !editProvider.forcePathStyle"
+              class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
+              :class="editProvider.forcePathStyle ? 'bg-brand-500' : 'bg-neutral-300'"
+            >
+              <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform"
+                :class="editProvider.forcePathStyle ? 'translate-x-5' : 'translate-x-1'" />
+            </button>
+            <span class="font-sans text-sm text-neutral-600">Force path style</span>
+          </div>
+
+          <div class="flex items-center gap-2 pt-2">
+            <button
+              @click="saveEditProvider"
+              :disabled="savingProvider || !editProvider.name || !editProvider.endpoint || !editProvider.bucket"
+              class="px-4 py-2 font-sans text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 rounded transition-colors disabled:opacity-50"
+            >
+              {{ savingProvider ? 'Saving...' : 'Save Changes' }}
+            </button>
+            <button
+              @click="cancelEditProvider"
+              class="px-4 py-2 font-sans text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+            >
+              Cancel
+            </button>
           </div>
         </div>
 

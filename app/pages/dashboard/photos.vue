@@ -9,6 +9,54 @@ const deletingId = ref<number | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 const uploadErrors = ref<string[]>([])
+const scanning = ref(false)
+const scanResult = ref<string>('')
+
+const selectedIds = ref<Set<string>>(new Set())
+const batchDeleting = ref(false)
+
+function toggleSelect(id: string) {
+  if (selectedIds.value.has(id)) {
+    selectedIds.value.delete(id)
+  } else {
+    selectedIds.value.add(id)
+  }
+  selectedIds.value = new Set(selectedIds.value)
+}
+
+function toggleSelectAll() {
+  if (!photos.value) return
+  if (selectedIds.value.size === photos.value.length) {
+    selectedIds.value = new Set()
+  } else {
+    selectedIds.value = new Set(photos.value.map((p: any) => p.id))
+  }
+}
+
+function clearSelection() {
+  selectedIds.value = new Set()
+}
+
+async function batchDelete() {
+  if (selectedIds.value.size === 0) return
+  if (!confirm(`Delete ${selectedIds.value.size} photos? This cannot be undone.`)) return
+  batchDeleting.value = true
+  try {
+    const res = await $fetch<{ deleted: number; failed: number }>('/api/photos/batch', {
+      method: 'DELETE',
+      body: { ids: Array.from(selectedIds.value) },
+    })
+    if (res.failed > 0) {
+      scanResult.value = `Deleted ${res.deleted}, ${res.failed} failed.`
+    }
+    selectedIds.value = new Set()
+    await refresh()
+  } catch (e: any) {
+    console.error('Failed to batch delete:', e)
+  } finally {
+    batchDeleting.value = false
+  }
+}
 
 async function handleFiles(files: FileList | null) {
   if (!files || files.length === 0) return
@@ -68,6 +116,28 @@ function onDragOver(e: DragEvent) {
   e.preventDefault()
 }
 
+async function scanStorage() {
+  scanning.value = true
+  scanResult.value = ''
+  try {
+    const res = await $fetch<{ totalFound: number; alreadyExists: number; newQueued: number; failed: number }>('/api/photos/scan', {
+      method: 'POST',
+    })
+    if (res.newQueued > 0) {
+      scanResult.value = `Found ${res.totalFound} images, ${res.alreadyExists} already imported, ${res.newQueued} queued for processing.`
+    } else if (res.totalFound > 0) {
+      scanResult.value = `Found ${res.totalFound} images, all already imported.`
+    } else {
+      scanResult.value = 'No images found in storage.'
+    }
+    await refresh()
+  } catch (e: any) {
+    scanResult.value = `Scan failed: ${e?.data?.message || e?.message || 'Unknown error'}`
+  } finally {
+    scanning.value = false
+  }
+}
+
 async function deletePhoto(id: number) {
   if (!confirm('Delete this photo? This cannot be undone.')) return
   deletingId.value = id
@@ -110,6 +180,44 @@ const thumbUrl = (photo: any) => {
       </template>
     </div>
 
+    <div class="mb-4 flex items-center gap-3">
+      <button
+        @click="scanStorage"
+        :disabled="scanning"
+        class="px-3 py-1.5 text-sm font-sans text-neutral-600 border border-neutral-300 rounded hover:bg-neutral-50 transition-colors disabled:opacity-50"
+      >
+        <UIcon :name="scanning ? 'i-lucide-loader-2' : 'i-lucide-scan'" class="text-sm mr-1" :class="scanning ? 'animate-spin' : ''" />
+        Scan Storage
+      </button>
+      <span v-if="scanResult" class="font-sans text-xs text-neutral-500">{{ scanResult }}</span>
+    </div>
+
+    <!-- Batch toolbar -->
+    <div v-if="photos && photos.length > 0" class="mb-4 flex items-center gap-3">
+      <label class="flex items-center gap-1.5 cursor-pointer">
+        <input type="checkbox" :checked="selectedIds.size === photos.length && photos.length > 0" @change="toggleSelectAll"
+          class="w-4 h-4 rounded border-neutral-300 text-brand-500 focus:ring-brand-500" />
+        <span class="font-sans text-sm text-neutral-600">Select All</span>
+      </label>
+      <template v-if="selectedIds.size > 0">
+        <span class="font-sans text-xs text-neutral-400">{{ selectedIds.size }} selected</span>
+        <button
+          @click="batchDelete"
+          :disabled="batchDeleting"
+          class="px-3 py-1 text-sm font-sans text-red-600 border border-red-300 rounded hover:bg-red-50 transition-colors disabled:opacity-50"
+        >
+          <UIcon :name="batchDeleting ? 'i-lucide-loader-2' : 'i-lucide-trash-2'" class="text-sm mr-1" :class="batchDeleting ? 'animate-spin' : ''" />
+          Delete Selected
+        </button>
+        <button
+          @click="clearSelection"
+          class="px-2 py-1 text-sm font-sans text-neutral-500 hover:text-neutral-900 transition-colors"
+        >
+          Cancel
+        </button>
+      </template>
+    </div>
+
     <div v-if="uploadErrors.length > 0" class="mb-4 p-3 bg-red-50 border border-red-200 rounded">
       <p class="font-sans text-sm text-red-700 mb-1">Some uploads failed:</p>
       <ul class="font-sans text-xs text-red-600 list-disc list-inside">
@@ -118,13 +226,21 @@ const thumbUrl = (photo: any) => {
     </div>
 
     <div v-if="photos && photos.length > 0" class="grid grid-cols-4 gap-3">
-      <div v-for="photo in photos" :key="photo.id" class="relative group aspect-square overflow-hidden rounded bg-neutral-100">
+      <div v-for="photo in photos" :key="photo.id" class="relative group aspect-square overflow-hidden rounded bg-neutral-100"
+        :class="selectedIds.has(photo.id) ? 'ring-2 ring-brand-500' : ''">
         <img :src="thumbUrl(photo)" :alt="photo.fileName" class="w-full h-full object-cover" loading="lazy" />
-        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+        <input
+          type="checkbox"
+          :checked="selectedIds.has(photo.id)"
+          @change="toggleSelect(photo.id)"
+          @click.stop
+          class="absolute top-2 left-2 w-4 h-4 rounded border-white bg-white/80 text-brand-500 focus:ring-brand-500 cursor-pointer"
+        />
+        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center pointer-events-none">
           <button
             @click="deletePhoto(photo.id)"
             :disabled="deletingId === photo.id"
-            class="opacity-0 group-hover:opacity-100 p-2 bg-white/90 hover:bg-red-500 hover:text-white rounded transition-all disabled:opacity-50"
+            class="opacity-0 group-hover:opacity-100 p-2 bg-white/90 hover:bg-red-500 hover:text-white rounded transition-all disabled:opacity-50 pointer-events-auto"
           >
             <UIcon :name="deletingId === photo.id ? 'i-lucide-loader-2' : 'i-lucide-trash-2'" class="text-base" :class="deletingId === photo.id ? 'animate-spin' : ''" />
           </button>
