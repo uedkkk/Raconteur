@@ -36,7 +36,7 @@ function thumbUrl(photo: Photo) {
     <!-- Featured -->
     <section v-if="featuredPost" class="pt-12">
       <div class="flex items-center gap-3 mb-4">
-        <span class="font-sans text-[11px] font-semibold uppercase tracking-[0.15em] text-brand-500">Latest essay</span>
+        <span class="font-sans text-[11px] font-semibold uppercase tracking-[0.15em] text-brand-500">Latest post</span>
         <span class="flex-1 h-px bg-neutral-200" />
       </div>
       <h2 class="font-display font-bold text-[42px] leading-[1.05] tracking-[-0.025em] mb-5 font-opsz-144">
@@ -50,7 +50,7 @@ function thumbUrl(photo: Photo) {
       <p class="font-sans text-xs font-medium text-neutral-500 mt-[18px]">
         {{ formatDateFull(featuredPost.publishedAt || featuredPost.createdAt) }}
         <span class="mx-1">·</span>
-        <NuxtLink :to="`/posts/${featuredPost.slug}`" class="text-brand-500 no-underline border-b-2 border-brand-500 pb-px">Read essay →</NuxtLink>
+        <NuxtLink :to="`/posts/${featuredPost.slug}`" class="text-brand-500 no-underline border-b-2 border-brand-500 pb-px">Read post →</NuxtLink>
       </p>
     </section>
 

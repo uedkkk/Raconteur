@@ -34,7 +34,7 @@ function formatDate(date: string | Date) {
   <div v-if="post" class="mx-auto max-w-[900px] px-8 py-12">
     <header class="mb-10">
       <NuxtLink to="/" class="font-sans text-xs font-semibold uppercase tracking-[0.08em] text-brand-500 no-underline">
-        ← Writing
+        ← Posts
       </NuxtLink>
       <p class="font-display font-bold text-sm uppercase tracking-[0.05em] text-brand-500 mt-6 mb-3">
         {{ formatDate(post.publishedAt || post.createdAt) }}
