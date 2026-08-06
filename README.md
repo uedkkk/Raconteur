@@ -45,6 +45,61 @@ npx nuxt dev --host
 
 Then open `http://localhost:3000`. The first launch runs an onboarding wizard to create your admin account.
 
+## Deployment
+
+### Build
+
+```bash
+# Build the monorepo package (WebGL image viewer)
+pnpm build:deps
+
+# Build the Nuxt application
+pnpm build
+```
+
+The build output is in `.output/`. Start the production server with:
+
+```bash
+node .output/server/index.mjs
+```
+
+The database auto-migrates on startup — no manual migration step required.
+
+### Environment variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DATABASE_URL` | SQLite database path | `./data/app.sqlite3` |
+| `NUXT_SESSION_PASSWORD` | Session encryption key (min 32 chars) | Auto-generated, persisted to `data/.session-password` |
+| `NUXT_STORAGE_PROVIDER` | Storage backend: `local` or `s3` | `local` |
+| `NUXT_ALLOW_INSECURE_COOKIE` | Allow non-HTTPS cookies | `false` |
+| `CFRAME_ADMIN_NAME` | Pre-configure admin username | — |
+| `CFRAME_ADMIN_EMAIL` | Pre-configure admin email | — |
+| `CFRAME_ADMIN_PASSWORD` | Pre-configure admin password | — |
+| `NUXT_OAUTH_GITHUB_CLIENT_ID` | GitHub OAuth client ID | — |
+| `NUXT_OAUTH_GITHUB_CLIENT_SECRET` | GitHub OAuth client secret | — |
+| `NUXT_MAPBOX_ACCESS_TOKEN` | Mapbox token for geo features | — |
+
+### S3 storage
+
+Set `NUXT_STORAGE_PROVIDER=s3` and configure:
+
+| Variable | Description |
+|----------|-------------|
+| `NUXT_PROVIDER_S3_ENDPOINT` | S3 endpoint URL |
+| `NUXT_PROVIDER_S3_BUCKET` | Bucket name |
+| `NUXT_PROVIDER_S3_REGION` | Region |
+| `NUXT_PROVIDER_S3_ACCESS_KEY_ID` | Access key |
+| `NUXT_PROVIDER_S3_SECRET_ACCESS_KEY` | Secret key |
+| `NUXT_PROVIDER_S3_PREFIX` | Key prefix |
+| `NUXT_PROVIDER_S3_CDN_URL` | CDN URL (optional) |
+| `NUXT_PROVIDER_S3_FORCE_PATH_STYLE` | Use path-style URLs |
+
+### Notes
+
+- The `data/` directory (database, storage, session password) must be persistent across restarts.
+- Native dependencies (`better-sqlite3`, `sharp`, `exiftool-vendored`) must be compatible with the target platform.
+
 ## Tech stack
 
 | Layer | Technology |
@@ -109,6 +164,61 @@ npx nuxt dev --host
 ```
 
 然后打开 `http://localhost:3000`。首次启动会运行引导向导创建管理员账号。
+
+## 部署
+
+### 构建
+
+```bash
+# 构建 monorepo 子包（WebGL 图片查看器）
+pnpm build:deps
+
+# 构建 Nuxt 应用
+pnpm build
+```
+
+构建产物在 `.output/` 目录，启动生产服务器：
+
+```bash
+node .output/server/index.mjs
+```
+
+数据库会在启动时自动迁移，无需手动执行迁移。
+
+### 环境变量
+
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `DATABASE_URL` | SQLite 数据库路径 | `./data/app.sqlite3` |
+| `NUXT_SESSION_PASSWORD` | 会话加密密钥（至少 32 字符） | 自动生成，持久化到 `data/.session-password` |
+| `NUXT_STORAGE_PROVIDER` | 存储后端：`local` 或 `s3` | `local` |
+| `NUXT_ALLOW_INSECURE_COOKIE` | 允许非 HTTPS Cookie | `false` |
+| `CFRAME_ADMIN_NAME` | 预配置管理员用户名 | — |
+| `CFRAME_ADMIN_EMAIL` | 预配置管理员邮箱 | — |
+| `CFRAME_ADMIN_PASSWORD` | 预配置管理员密码 | — |
+| `NUXT_OAUTH_GITHUB_CLIENT_ID` | GitHub OAuth 客户端 ID | — |
+| `NUXT_OAUTH_GITHUB_CLIENT_SECRET` | GitHub OAuth 客户端密钥 | — |
+| `NUXT_MAPBOX_ACCESS_TOKEN` | Mapbox 地图令牌 | — |
+
+### S3 存储
+
+设置 `NUXT_STORAGE_PROVIDER=s3` 并配置以下变量：
+
+| 变量 | 说明 |
+|------|------|
+| `NUXT_PROVIDER_S3_ENDPOINT` | S3 端点 URL |
+| `NUXT_PROVIDER_S3_BUCKET` | 存储桶名称 |
+| `NUXT_PROVIDER_S3_REGION` | 区域 |
+| `NUXT_PROVIDER_S3_ACCESS_KEY_ID` | Access Key |
+| `NUXT_PROVIDER_S3_SECRET_ACCESS_KEY` | Secret Key |
+| `NUXT_PROVIDER_S3_PREFIX` | Key 前缀 |
+| `NUXT_PROVIDER_S3_CDN_URL` | CDN URL（可选） |
+| `NUXT_PROVIDER_S3_FORCE_PATH_STYLE` | 使用 path-style URL |
+
+### 注意事项
+
+- `data/` 目录（数据库、存储、会话密钥）需要在重启后保持持久化。
+- 原生依赖（`better-sqlite3`、`sharp`、`exiftool-vendored`）需与目标平台兼容。
 
 ## 技术栈
 
