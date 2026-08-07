@@ -1,33 +1,59 @@
-# ---- Stage 1: Builder ----
-FROM node:22-slim AS builder
-
-RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+# ---- Stage 1: Base ----
+FROM node:22-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable && corepack prepare pnpm@10.34.1 --activate
 
-WORKDIR /app
-
+# ---- Stage 2: Dependencies ----
+FROM base AS deps
+WORKDIR /usr/src/app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-COPY packages/webgl-image/package.json packages/webgl-image/
-RUN pnpm install --frozen-lockfile
+COPY packages/webgl-image/package.json ./packages/webgl-image/
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm install --frozen-lockfile
 
+# ---- Stage 3: Build ----
+FROM base AS build
+WORKDIR /usr/src/app
+COPY --from=deps /usr/src/app/node_modules ./node_modules
+COPY --from=deps /usr/src/app/packages/webgl-image/node_modules ./packages/webgl-image/node_modules
 COPY . .
 RUN pnpm build:deps
 RUN NODE_OPTIONS="--max-old-space-size=8192" pnpm build
+RUN find ./.output -type f -name '*.map' -delete
 
-# ---- Stage 2: Production ----
-FROM node:22-slim AS production
+# ---- Stage 4: Runtime dependencies ----
+FROM node:22-alpine AS runtime_deps
+RUN apk add --no-cache ca-certificates perl exiftool \
+    && install -Dm755 "$(readlink -f /usr/bin/perl)" /opt/runtime-bin/perl \
+    && install -Dm755 "$(readlink -f /usr/bin/env)" /opt/runtime-bin/env \
+    && install -Dm755 "$(readlink -f /usr/bin/exiftool)" /opt/runtime-bin/exiftool
 
-RUN apt-get update && apt-get install -y perl && rm -rf /var/lib/apt/lists/*
-RUN corepack enable && corepack prepare pnpm@10.34.1 --activate
-
+# ---- Stage 5: Runtime (FROM scratch) ----
+FROM scratch AS runtime
 WORKDIR /app
 
-COPY --from=builder /app/.output ./.output
-COPY --from=builder /app/server/database/migrations ./server/database/migrations
-COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml /app/.npmrc ./
-COPY --from=builder /app/packages/webgl-image/package.json ./packages/webgl-image/
-COPY --from=builder /app/packages/webgl-image/dist ./packages/webgl-image/dist
-RUN pnpm install --prod --frozen-lockfile
+COPY --from=runtime_deps /usr/local/bin/node /usr/bin/node
+COPY --from=runtime_deps /opt/runtime-bin/perl /usr/bin/perl
+COPY --from=runtime_deps /opt/runtime-bin/env /usr/bin/env
+COPY --from=runtime_deps /opt/runtime-bin/exiftool /usr/bin/exiftool
+COPY --from=runtime_deps /usr/lib /usr/lib
+COPY --from=runtime_deps /usr/share /usr/share
+COPY --from=runtime_deps /lib /lib
+COPY --from=runtime_deps /etc/ssl /etc/ssl
+
+COPY --from=build /usr/src/app/.output ./.output
+COPY --from=build /usr/src/app/server/database/migrations ./server/database/migrations
 
 EXPOSE 3000
-CMD ["node", ".output/server/index.mjs"]
+VOLUME ["/app/data"]
+
+ENV NODE_ENV=production
+ENV NITRO_PORT=3000
+ENV NITRO_HOST=0.0.0.0
+ENV DATABASE_URL=./data/app.sqlite3
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV EXIFTOOL_PATH=/usr/bin/exiftool
+ENV PATH=/usr/bin
+
+CMD ["/usr/bin/node", ".output/server/index.mjs"]
