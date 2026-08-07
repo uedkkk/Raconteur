@@ -1,6 +1,7 @@
 services:
   raconteur:
-    image: ghcr.io/uedkkk/raconteur:latest
+    # 国内用户用阿里云源（快），海外用户可改为 ghcr.io/uedkkk/raconteur:latest
+    image: registry.cn-hangzhou.aliyuncs.com/uedkkk/raconteur:latest
     # build: .  # Uncomment to build locally instead of pulling from registry
     volumes:
       - ./data:/app/data
