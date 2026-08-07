@@ -6,8 +6,7 @@ on:
       - 'v*'
 
 env:
-  GHCR_REGISTRY: ghcr.io
-  ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
+  REGISTRY: ghcr.io
 
 jobs:
   docker:
@@ -29,17 +28,9 @@ jobs:
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.GHCR_REGISTRY }}
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Login to Aliyun
-        if: ${{ env.ALIYUN_REGISTRY != '' }}
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.ALIYUN_REGISTRY }}
-          username: ${{ secrets.ALIYUN_USERNAME }}
-          password: ${{ secrets.ALIYUN_PASSWORD }}
 
       - name: Extract version
         id: version
@@ -48,23 +39,14 @@ jobs:
       - name: Set lowercase image name
         run: echo "IMAGE_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-      - name: Generate tags
-        id: tags
-        run: |
-          TAGS="${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
-          TAGS="$TAGS,${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}"
-          if [ -n "${{ env.ALIYUN_REGISTRY }}" ]; then
-            TAGS="$TAGS,${{ env.ALIYUN_REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
-            TAGS="$TAGS,${{ env.ALIYUN_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}"
-          fi
-          echo "tags=$TAGS" >> $GITHUB_OUTPUT
-
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.tags.outputs.tags }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
