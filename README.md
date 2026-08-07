@@ -47,6 +47,26 @@ Then open `http://localhost:3000`. The first launch runs an onboarding wizard to
 
 ## Deployment
 
+### Docker (recommended)
+
+The easiest way to deploy. Pull the pre-built multi-arch image (amd64 + arm64) from GHCR:
+
+```bash
+# Download docker-compose.yml and nginx.conf from the repo, then:
+docker compose up -d
+```
+
+Open `http://localhost:3000`. The first launch runs an onboarding wizard.
+
+To build locally instead of pulling:
+
+```bash
+# Uncomment the `build: .` line in docker-compose.yml, then:
+docker compose up -d --build
+```
+
+The `data/` directory (database, uploaded photos, session password) is mounted as a volume and persists across restarts. If `NUXT_SESSION_PASSWORD` is not set, it is auto-generated and persisted to `data/.session-password`.
+
 ### Build
 
 ```bash
@@ -166,6 +186,26 @@ npx nuxt dev --host
 然后打开 `http://localhost:3000`。首次启动会运行引导向导创建管理员账号。
 
 ## 部署
+
+### Docker（推荐）
+
+最简单的部署方式。从 GHCR 拉取预构建的多架构镜像（amd64 + arm64）：
+
+```bash
+# 从仓库下载 docker-compose.yml 和 nginx.conf，然后：
+docker compose up -d
+```
+
+打开 `http://localhost:3000`，首次启动会运行引导向导。
+
+如需本地构建而非拉取镜像：
+
+```bash
+# 取消 docker-compose.yml 中的 `build: .` 注释，然后：
+docker compose up -d --build
+```
+
+`data/` 目录（数据库、上传的照片、会话密钥）以卷挂载，重启后持久保留。如未设置 `NUXT_SESSION_PASSWORD`，会自动生成并持久化到 `data/.session-password`。
 
 ### 构建
 
