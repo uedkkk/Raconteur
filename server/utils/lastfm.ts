@@ -1,7 +1,12 @@
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { resolve, join } from 'node:path'
+import { createHash } from 'node:crypto'
 import { settingsManager } from '~~/server/services/settings/settingsManager'
 import type { LastfmPeriod, TopTrack } from '~~/shared/types/lastfm'
 
 const API_BASE = 'https://ws.audioscrobbler.com/2.0/'
+const COVERS_DIR = resolve(process.cwd(), 'data/storage/covers')
+const COVERS_URL_BASE = '/storage/covers'
 
 export interface LastfmConfig {
   apiKey: string
@@ -32,6 +37,25 @@ function pickImage(images: any[]): string {
     if (images[i]?.['#text']) return images[i]['#text']
   }
   return ''
+}
+
+export async function localizeCover(remoteUrl: string): Promise<string> {
+  if (!remoteUrl) return ''
+  const hash = createHash('md5').update(remoteUrl).digest('hex')
+  const filename = `${hash}.jpg`
+  const filePath = join(COVERS_DIR, filename)
+  const localUrl = `${COVERS_URL_BASE}/${filename}`
+  if (existsSync(filePath)) return localUrl
+  try {
+    const res = await fetch(remoteUrl, { signal: AbortSignal.timeout(10000) })
+    if (!res.ok) return remoteUrl
+    const buf = Buffer.from(await res.arrayBuffer())
+    mkdirSync(COVERS_DIR, { recursive: true })
+    writeFileSync(filePath, buf)
+    return localUrl
+  } catch {
+    return remoteUrl
+  }
 }
 
 export async function fetchLastfmTopTracks(

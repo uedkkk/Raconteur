@@ -1,4 +1,4 @@
-import { getLastfmConfig, fetchLastfmTopTracks } from '~~/server/utils/lastfm'
+import { getLastfmConfig, fetchLastfmTopTracks, localizeCover } from '~~/server/utils/lastfm'
 import type { LastfmPeriod, TopTrack, TopTracksResponse } from '~~/shared/types/lastfm'
 
 const LIMIT = 5
@@ -27,8 +27,11 @@ export default eventHandler(async () => {
       config.period,
       LIMIT,
     )
-    cache = { period: config.period, profileUrl, tracks, ts: Date.now() }
-    return { period: config.period, profileUrl, tracks } satisfies TopTracksResponse
+    const localized = await Promise.all(
+      tracks.map(async (t) => ({ ...t, cover: await localizeCover(t.cover) })),
+    )
+    cache = { period: config.period, profileUrl, tracks: localized, ts: Date.now() }
+    return { period: config.period, profileUrl, tracks: localized } satisfies TopTracksResponse
   } catch (err: any) {
     logger.dynamic('lastfm').warn('Failed to fetch Last.fm top tracks:', err?.message)
     return {
