@@ -42,11 +42,37 @@ const LOCATION_SETTINGS_UI: Record<string, FieldUIConfig> = {
   'nominatim.baseUrl': { type: 'url', placeholder: 'https://nominatim.openstreetmap.org' },
 }
 
+const LASTFM_SETTINGS_UI: Record<string, FieldUIConfig> = {
+  apiKey: {
+    type: 'password',
+    label: 'API key',
+    placeholder: 'Your Last.fm API key',
+    help: 'Create one at last.fm/api/account/create',
+  },
+  user: {
+    type: 'input',
+    label: 'Username',
+    placeholder: 'Your Last.fm username',
+  },
+  period: {
+    type: 'select',
+    label: 'Period',
+    options: [
+      { label: 'Last 7 days', value: '7day' },
+      { label: 'Last 30 days', value: '1month' },
+      { label: 'Last 3 months', value: '3month' },
+      { label: 'Last 6 months', value: '6month' },
+      { label: 'Last 12 months', value: '12month' },
+    ],
+  },
+}
+
 const NAMESPACE_UI_MAP: Record<string, Record<string, FieldUIConfig>> = {
   app: APP_SETTINGS_UI,
   system: SYSTEM_SETTINGS_UI,
   privacy: PRIVACY_SETTINGS_UI,
   location: LOCATION_SETTINGS_UI,
+  lastfm: LASTFM_SETTINGS_UI,
 }
 
 export function getSettingUIConfig(
