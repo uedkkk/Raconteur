@@ -178,8 +178,6 @@ npx nuxt dev --host
 
 ### Docker（推荐）
 
-### Docker（推荐）
-
 ```bash
 # 下载 docker-compose.yml 和 nginx.conf，然后：
 docker compose up -d
