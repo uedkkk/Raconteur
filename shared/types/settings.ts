@@ -36,6 +36,7 @@ export type FieldUIType =
 
 export interface FieldUIConfig {
   type: FieldUIType
+  label?: string
   placeholder?: string
   help?: string
   visibleIf?: {

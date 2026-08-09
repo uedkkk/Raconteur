@@ -11,6 +11,7 @@ const namespaces = [
   { label: 'Storage', value: 'storage' },
   { label: 'Privacy', value: 'privacy' },
   { label: 'Location', value: 'location' },
+  { label: 'Last.fm', value: 'lastfm' },
 ]
 
 const activeNamespace = ref('app')
@@ -100,6 +101,37 @@ async function save() {
 function isFieldVisible(field: FieldDescriptor) {
   if (!field.ui?.visibleIf) return true
   return formValues.value[field.ui.visibleIf.fieldKey] === field.ui.visibleIf.value
+}
+
+const testing = ref(false)
+const testResult = ref<{ ok: boolean; message: string } | null>(null)
+
+async function testLastfm() {
+  testing.value = true
+  testResult.value = null
+  try {
+    const res = await $fetch<{ ok: boolean; sample: string | null }>(
+      '/api/lastfm/test',
+      {
+        method: 'POST',
+        body: {
+          apiKey: formValues.value['apiKey'],
+          user: formValues.value['user'],
+        },
+      },
+    )
+    testResult.value = {
+      ok: true,
+      message: res.sample ? `Connected — top track: ${res.sample}` : 'Connected',
+    }
+  } catch (e: any) {
+    testResult.value = {
+      ok: false,
+      message: e?.statusMessage || e?.message || 'Failed',
+    }
+  } finally {
+    testing.value = false
+  }
 }
 
 // Storage functions
@@ -218,6 +250,7 @@ async function saveEditProvider() {
 }
 
 watch(activeNamespace, (val) => {
+  testResult.value = null
   if (val === 'storage') {
     fetchStorageProviders()
   } else {
@@ -455,7 +488,7 @@ watch(activeNamespace, (val) => {
       <template v-for="field in fields" :key="field.key">
         <div v-if="isFieldVisible(field)">
           <label class="block font-sans text-sm font-medium text-neutral-700 mb-1">
-            {{ field.key }}
+            {{ field.ui?.label || field.key }}
             <span v-if="field.ui?.required" class="text-red-400">*</span>
           </label>
 
@@ -519,7 +552,7 @@ watch(activeNamespace, (val) => {
         </div>
       </template>
 
-      <div class="pt-4">
+      <div class="pt-4 flex items-center gap-3 flex-wrap">
         <button
           @click="save"
           :disabled="saving"
@@ -527,6 +560,23 @@ watch(activeNamespace, (val) => {
         >
           {{ saving ? 'Saving...' : 'Save Changes' }}
         </button>
+
+        <template v-if="activeNamespace === 'lastfm'">
+          <button
+            @click="testLastfm"
+            :disabled="testing"
+            class="px-5 py-2 font-sans font-medium text-brand-600 border border-brand-300 hover:bg-brand-50 rounded transition-colors disabled:opacity-50"
+          >
+            {{ testing ? 'Testing...' : 'Test connection' }}
+          </button>
+          <span
+            v-if="testResult"
+            class="font-sans text-sm"
+            :class="testResult.ok ? 'text-green-600' : 'text-red-500'"
+          >
+            {{ testResult.message }}
+          </span>
+        </template>
       </div>
     </div>
   </div>

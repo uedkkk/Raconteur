@@ -107,6 +107,9 @@ function thumbUrl(photo: Photo) {
       </div>
     </section>
 
+    <!-- Most Played -->
+    <MostPlayed />
+
     <!-- Empty state -->
     <div v-if="!featuredPost && recentPhotos.length === 0" class="text-center py-20">
       <p class="font-serif text-xl text-neutral-400">No stories yet.</p>
