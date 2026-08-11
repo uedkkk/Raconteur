@@ -1,4 +1,5 @@
 import { getLastfmConfig, fetchLastfmTopTracks, localizeCover } from '~~/server/utils/lastfm'
+import { fetchCoverFromItunes } from '~~/server/utils/coverArt'
 import type { LastfmPeriod, TopTrack, TopTracksResponse } from '~~/shared/types/lastfm'
 
 const LIMIT = 5
@@ -28,7 +29,10 @@ export default eventHandler(async () => {
       LIMIT,
     )
     const localized = await Promise.all(
-      tracks.map(async (t) => ({ ...t, cover: await localizeCover(t.cover) })),
+      tracks.map(async (t) => {
+        const itunesCover = await fetchCoverFromItunes(t.title, t.artist)
+        return { ...t, cover: await localizeCover(itunesCover) }
+      }),
     )
     cache = { period: config.period, profileUrl, tracks: localized, ts: Date.now() }
     return { period: config.period, profileUrl, tracks: localized } satisfies TopTracksResponse
