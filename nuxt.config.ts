@@ -28,6 +28,7 @@ export default defineNuxtConfig({
         slogan: '',
         author: '',
         avatarUrl: '',
+        faviconUrl: '',
       },
       oauth: {
         github: {
