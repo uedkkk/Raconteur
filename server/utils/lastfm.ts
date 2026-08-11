@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, writeFileSync, utimesSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { createHash } from 'node:crypto'
 import { settingsManager } from '~~/server/services/settings/settingsManager'
@@ -45,7 +45,10 @@ export async function localizeCover(remoteUrl: string): Promise<string> {
   const filename = `${hash}.jpg`
   const filePath = join(COVERS_DIR, filename)
   const localUrl = `${COVERS_URL_BASE}/${filename}`
-  if (existsSync(filePath)) return localUrl
+  if (existsSync(filePath)) {
+    try { utimesSync(filePath, new Date(), new Date()) } catch {}
+    return localUrl
+  }
   try {
     const res = await fetch(remoteUrl, { signal: AbortSignal.timeout(10000) })
     if (!res.ok) return remoteUrl
