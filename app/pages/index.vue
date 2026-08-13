@@ -29,6 +29,12 @@ function thumbUrl(photo: Photo) {
   if (photo.storageKey) return `/storage/${photo.storageKey}`
   return ''
 }
+
+function getAspectRatio(photo: Photo): number {
+  if (photo.aspectRatio) return photo.aspectRatio
+  if (photo.width && photo.height) return photo.width / photo.height
+  return 1.2
+}
 </script>
 
 <template>
@@ -85,17 +91,18 @@ function thumbUrl(photo: Photo) {
           View all →
         </NuxtLink>
       </div>
-      <div class="grid grid-cols-2 gap-5 mb-14">
+      <div class="columns-2 gap-5 mb-14">
         <NuxtLink
           v-for="photo in recentPhotos"
           :key="photo.id"
           :to="`/photos/${photo.id}`"
-          class="no-underline"
+          class="no-underline break-inside-avoid mb-5 block"
         >
           <img
             :src="thumbUrl(photo)"
             :alt="photo.title || ''"
-            class="w-full h-[300px] object-cover"
+            class="w-full object-cover"
+            :style="{ aspectRatio: getAspectRatio(photo) }"
             loading="lazy"
           />
           <div class="font-sans text-xs font-medium text-neutral-500 mt-2 flex gap-2 items-center">

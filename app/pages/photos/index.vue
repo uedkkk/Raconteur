@@ -12,6 +12,12 @@ const thumbUrl = (photo: Photo) => {
   return ''
 }
 
+function getAspectRatio(photo: Photo): number {
+  if (photo.aspectRatio) return photo.aspectRatio
+  if (photo.width && photo.height) return photo.width / photo.height
+  return 1.2
+}
+
 const dayjs = useDayjs()
 const formatDate = (date: string | null) => {
   if (!date) return ''
@@ -28,19 +34,22 @@ const formatDate = (date: string | null) => {
       </span>
     </div>
 
-    <div v-if="photos && photos.length > 0" class="grid grid-cols-2 gap-5 mb-14">
+    <div v-if="photos && photos.length > 0" class="columns-2 gap-5 mb-14">
       <NuxtLink
         v-for="photo in photos"
         :key="photo.id"
         :to="`/photos/${photo.id}`"
-        class="no-underline group"
+        class="no-underline group break-inside-avoid mb-5 block"
       >
-        <img
-          :src="thumbUrl(photo)"
-          :alt="photo.title || ''"
-          class="w-full h-[300px] object-cover transition-transform group-hover:scale-[1.02]"
-          loading="lazy"
-        />
+        <div class="overflow-hidden">
+          <img
+            :src="thumbUrl(photo)"
+            :alt="photo.title || ''"
+            class="w-full object-cover transition-transform group-hover:scale-[1.02]"
+            :style="{ aspectRatio: getAspectRatio(photo) }"
+            loading="lazy"
+          />
+        </div>
         <div class="font-sans text-xs font-medium text-neutral-500 mt-2 flex gap-2 items-center">
           <span v-if="photo.title" class="text-neutral-900 font-semibold">{{ photo.title }}</span>
           <span v-if="photo.title && (photo.city || photo.dateTaken)" class="text-neutral-300">·</span>
