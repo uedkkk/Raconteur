@@ -103,6 +103,30 @@ function isFieldVisible(field: FieldDescriptor) {
   return formValues.value[field.ui.visibleIf.fieldKey] === field.ui.visibleIf.value
 }
 
+const uploadingField = ref<string | null>(null)
+
+async function handleImageUpload(field: FieldDescriptor, event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  uploadingField.value = field.key
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await $fetch<{ url: string }>('/api/settings/upload', {
+      method: 'POST',
+      body: formData,
+    })
+    formValues.value[field.key] = res.url
+    toast.add({ title: 'Image uploaded', color: 'success' })
+  } catch (e: any) {
+    toast.add({ title: 'Upload failed', description: e?.statusMessage || e?.message, color: 'error' })
+  } finally {
+    uploadingField.value = null
+    input.value = ''
+  }
+}
+
 const testing = ref(false)
 const testResult = ref<{ ok: boolean; message: string } | null>(null)
 
@@ -538,6 +562,32 @@ watch(activeNamespace, (val) => {
                 :class="formValues[field.key] ? 'translate-x-6' : 'translate-x-1'"
               />
             </button>
+          </div>
+
+          <div v-else-if="field.ui.type === 'image'" class="space-y-2">
+            <div class="flex items-center gap-3">
+              <div v-if="formValues[field.key]" class="w-12 h-12 rounded border border-neutral-200 overflow-hidden flex-shrink-0 bg-neutral-50">
+                <img :src="formValues[field.key]" :alt="field.key" class="w-full h-full object-contain" />
+              </div>
+              <label
+                class="px-3 py-1.5 font-sans text-sm text-brand-600 border border-brand-300 hover:bg-brand-50 rounded cursor-pointer transition-colors whitespace-nowrap"
+                :class="{ 'opacity-50 pointer-events-none': uploadingField === field.key }"
+              >
+                {{ uploadingField === field.key ? 'Uploading...' : 'Upload' }}
+                <input
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  @change="handleImageUpload(field, $event)"
+                />
+              </label>
+              <input
+                v-model="formValues[field.key]"
+                type="url"
+                :placeholder="field.ui?.placeholder"
+                class="flex-1 px-3 py-2 font-sans text-sm border border-neutral-300 rounded focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+              />
+            </div>
           </div>
 
           <textarea

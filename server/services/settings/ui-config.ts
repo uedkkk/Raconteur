@@ -4,8 +4,8 @@ const APP_SETTINGS_UI: Record<string, FieldUIConfig> = {
   title: { type: 'input', required: true, placeholder: 'My Blog' },
   slogan: { type: 'input', placeholder: 'A place for stories' },
   author: { type: 'input', placeholder: 'Your name' },
-  avatarUrl: { type: 'url', placeholder: 'https://...' },
-  faviconUrl: { type: 'url', placeholder: 'https://...' },
+  avatarUrl: { type: 'image', placeholder: 'https://...' },
+  faviconUrl: { type: 'image', placeholder: 'https://...' },
 }
 
 const SYSTEM_SETTINGS_UI: Record<string, FieldUIConfig> = {
