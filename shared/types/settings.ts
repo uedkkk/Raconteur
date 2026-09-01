@@ -32,6 +32,7 @@ export type FieldUIType =
   | 'tabs'
   | 'toggle'
   | 'number'
+  | 'image'
   | 'custom'
 
 export interface FieldUIConfig {

@@ -51,6 +51,15 @@ export const DEFAULT_SETTINGS = [
     isPublic: true,
   },
   {
+    namespace: 'app',
+    key: 'faviconUrl',
+    type: 'string',
+    defaultValue: '',
+    label: 'settings.app.faviconUrl.label',
+    description: 'settings.app.faviconUrl.description',
+    isPublic: true,
+  },
+  {
     namespace: 'system',
     key: 'upload.maxFileSize',
     type: 'number',

@@ -32,6 +32,7 @@ async function migrateRuntimeConfigToSettings() {
         slogan: config.public.app.slogan,
         author: config.public.app.author,
         avatarUrl: config.public.app.avatarUrl,
+        faviconUrl: config.public.app.faviconUrl,
       }
 
       for (const [key, value] of Object.entries(appSettings)) {
